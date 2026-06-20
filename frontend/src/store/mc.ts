@@ -106,12 +106,16 @@ export const SCENARIOS: MCScenario[] = [
   { id: 'gambler', name: '赌徒破产', description: '不利赌局下资金耗尽概率估算', params: { p: 0.45, bankroll: 50, goal: 100 }, category: '概率' }
 ]
 
+export const CATEGORIES = ['全部', ...Array.from(new Set(SCENARIOS.map(s => s.category)))] as const
+
 export const useMCStore = defineStore('mc', () => {
   const currentScenario = ref<MCScenario>(SCENARIOS[0])
   const iterations = ref(1000)
   const result = ref<MCResult | null>(null)
   const testResult = ref<HypTestResult | null>(null)
   const isRunning = ref(false)
+  const selectedCategory = ref<string>('全部')
+  const groupByCategory = ref<boolean>(false)
 
   function runSimulation() {
     isRunning.value = true
@@ -132,6 +136,24 @@ export const useMCStore = defineStore('mc', () => {
   }
 
   function setScenario(s: MCScenario) { currentScenario.value = s; result.value = null }
+  function setCategory(c: string) { selectedCategory.value = c }
+  function toggleGroupBy() { groupByCategory.value = !groupByCategory.value }
+
+  const filteredScenarios = computed(() => {
+    if (selectedCategory.value === '全部') return SCENARIOS
+    return SCENARIOS.filter(s => s.category === selectedCategory.value)
+  })
+
+  const groupedScenarios = computed(() => {
+    const list = filteredScenarios.value
+    if (!groupByCategory.value) return [{ group: '全部', items: list }]
+    const groups: Record<string, MCScenario[]> = {}
+    list.forEach(s => {
+      if (!groups[s.category]) groups[s.category] = []
+      groups[s.category].push(s)
+    })
+    return Object.entries(groups).map(([group, items]) => ({ group, items }))
+  })
 
   const convergenceData = computed(() => {
     if (!result.value) return [] as [number, number][]
@@ -148,5 +170,5 @@ export const useMCStore = defineStore('mc', () => {
     return { xAxis: Array.from({ length: bins }, (_, i) => Math.round((mn + i * bs) * 100) / 100), data: counts }
   })
 
-  return { currentScenario, iterations, result, testResult, isRunning, convergenceData, histogramData, runSimulation, runTest, setScenario }
+  return { currentScenario, iterations, result, testResult, isRunning, selectedCategory, groupByCategory, convergenceData, histogramData, filteredScenarios, groupedScenarios, runSimulation, runTest, setScenario, setCategory, toggleGroupBy }
 })

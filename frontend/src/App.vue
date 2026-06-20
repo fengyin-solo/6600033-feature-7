@@ -7,12 +7,32 @@
     <div class="flex flex-col lg:flex-row gap-4 p-4">
       <div class="lg:w-1/4 space-y-4">
         <div class="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <h3 class="text-sm font-bold text-slate-400 mb-3">模拟场景</h3>
-          <div class="space-y-1">
-            <div v-for="s in SCENARIOS" :key="s.id" @click="store.setScenario(s)"
-              :class="['cursor-pointer p-2 rounded border text-sm transition-all', store.currentScenario.id === s.id ? 'border-cyan-500 bg-cyan-900/30 text-cyan-400' : 'border-slate-700 text-slate-300 hover:border-slate-500']">
-              <div class="font-bold">{{ s.name }}</div>
-              <div class="text-xs text-slate-500 mt-0.5">{{ s.description }}</div>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-slate-400">模拟场景</h3>
+            <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-500 hover:text-slate-300 transition-colors">
+              <input type="checkbox" :checked="store.groupByCategory" @change="store.toggleGroupBy()" class="accent-cyan-500 w-3.5 h-3.5" />
+              分组显示
+            </label>
+          </div>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <button v-for="cat in CATEGORIES" :key="cat" @click="store.setCategory(cat)"
+              :class="['px-2.5 py-1 text-xs rounded-full border transition-all', store.selectedCategory === cat ? 'bg-cyan-600 border-cyan-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-300']">
+              {{ cat }}
+            </button>
+          </div>
+          <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+            <div v-for="g in store.groupedScenarios" :key="g.group">
+              <div v-if="store.groupByCategory" class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5 pb-1 border-b border-slate-700">{{ g.group }} <span class="text-slate-600 normal-case">({{ g.items.length }})</span></div>
+              <div class="space-y-1">
+                <div v-for="s in g.items" :key="s.id" @click="store.setScenario(s)"
+                  :class="['cursor-pointer p-2 rounded border text-sm transition-all', store.currentScenario.id === s.id ? 'border-cyan-500 bg-cyan-900/30 text-cyan-400' : 'border-slate-700 text-slate-300 hover:border-slate-500']">
+                  <div class="font-bold flex items-center justify-between">
+                    <span>{{ s.name }}</span>
+                    <span v-if="!store.groupByCategory" class="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-500 font-normal">{{ s.category }}</span>
+                  </div>
+                  <div class="text-xs text-slate-500 mt-0.5">{{ s.description }}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -71,7 +91,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import * as echarts from 'echarts'
-import { useMCStore, SCENARIOS } from './store/mc'
+import { useMCStore, CATEGORIES } from './store/mc'
 
 const store = useMCStore()
 const convergenceRef = ref<HTMLDivElement | null>(null)
