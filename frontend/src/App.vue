@@ -107,25 +107,33 @@ function initCharts() {
 }
 
 function updateCharts() {
-  if (convChart && store.convergenceData.length > 0) {
-    convChart.setOption({
-      backgroundColor: '#0f172a',
-      grid: { top: 20, bottom: 35, left: 65, right: 20 },
-      xAxis: { type: 'value', axisLabel: { color: '#94a3b8', fontSize: 10 } },
-      yAxis: { type: 'value', axisLabel: { color: '#94a3b8', fontSize: 10 } },
-      series: [{ type: 'line', data: store.convergenceData, smooth: true, lineStyle: { color: '#06b6d4', width: 2 }, areaStyle: { color: 'rgba(6,182,212,0.1)' }, symbol: 'none' }],
-      tooltip: { trigger: 'axis', backgroundColor: '#1e293b', borderColor: '#475569' }
-    })
+  if (convChart) {
+    if (store.convergenceData.length > 0) {
+      convChart.setOption({
+        backgroundColor: '#0f172a',
+        grid: { top: 20, bottom: 35, left: 65, right: 20 },
+        xAxis: { type: 'value', axisLabel: { color: '#94a3b8', fontSize: 10 } },
+        yAxis: { type: 'value', axisLabel: { color: '#94a3b8', fontSize: 10 } },
+        series: [{ type: 'line', data: store.convergenceData, smooth: true, lineStyle: { color: '#06b6d4', width: 2 }, areaStyle: { color: 'rgba(6,182,212,0.1)' }, symbol: 'none' }],
+        tooltip: { trigger: 'axis', backgroundColor: '#1e293b', borderColor: '#475569' }
+      })
+    } else {
+      convChart.clear()
+    }
   }
-  if (histChart && store.histogramData.xAxis.length > 0) {
-    histChart.setOption({
-      backgroundColor: '#0f172a',
-      grid: { top: 15, bottom: 40, left: 55, right: 15 },
-      xAxis: { type: 'category', data: store.histogramData.xAxis, axisLabel: { color: '#94a3b8', fontSize: 9, rotate: 30 } },
-      yAxis: { type: 'value', axisLabel: { color: '#94a3b8', fontSize: 10 } },
-      series: [{ type: 'bar', data: store.histogramData.data, itemStyle: { color: '#8b5cf6' } }],
-      tooltip: { trigger: 'axis', backgroundColor: '#1e293b', borderColor: '#475569' }
-    })
+  if (histChart) {
+    if (store.histogramData.xAxis.length > 0) {
+      histChart.setOption({
+        backgroundColor: '#0f172a',
+        grid: { top: 15, bottom: 40, left: 55, right: 15 },
+        xAxis: { type: 'category', data: store.histogramData.xAxis, axisLabel: { color: '#94a3b8', fontSize: 9, rotate: 30 } },
+        yAxis: { type: 'value', axisLabel: { color: '#94a3b8', fontSize: 10 } },
+        series: [{ type: 'bar', data: store.histogramData.data, itemStyle: { color: '#8b5cf6' } }],
+        tooltip: { trigger: 'axis', backgroundColor: '#1e293b', borderColor: '#475569' }
+      })
+    } else {
+      histChart.clear()
+    }
   }
 }
 

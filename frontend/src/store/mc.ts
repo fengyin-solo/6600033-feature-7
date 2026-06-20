@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 export interface MCScenario {
   id: string
@@ -108,14 +108,42 @@ export const SCENARIOS: MCScenario[] = [
 
 export const CATEGORIES = ['全部', ...Array.from(new Set(SCENARIOS.map(s => s.category)))] as const
 
+const STORAGE_KEY = 'mc_platform_state'
+
+interface PersistedState {
+  scenarioId: string
+  iterations: number
+  selectedCategory: string
+  groupByCategory: boolean
+}
+
+function loadPersistedState(): PersistedState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch (e) {}
+  return null
+}
+
+function savePersistedState(state: PersistedState) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch (e) {}
+}
+
+function getScenarioById(id: string): MCScenario {
+  return SCENARIOS.find(s => s.id === id) || SCENARIOS[0]
+}
+
 export const useMCStore = defineStore('mc', () => {
-  const currentScenario = ref<MCScenario>(SCENARIOS[0])
-  const iterations = ref(1000)
+  const persisted = loadPersistedState()
+  const currentScenario = ref<MCScenario>(persisted ? getScenarioById(persisted.scenarioId) : SCENARIOS[0])
+  const iterations = ref(persisted?.iterations ?? 1000)
   const result = ref<MCResult | null>(null)
   const testResult = ref<HypTestResult | null>(null)
   const isRunning = ref(false)
-  const selectedCategory = ref<string>('全部')
-  const groupByCategory = ref<boolean>(false)
+  const selectedCategory = ref<string>(persisted?.selectedCategory ?? '全部')
+  const groupByCategory = ref<boolean>(persisted?.groupByCategory ?? false)
 
   function runSimulation() {
     isRunning.value = true
@@ -135,9 +163,23 @@ export const useMCStore = defineStore('mc', () => {
     testResult.value = { testType: 'Welch T检验', statistic: Math.round(t * 1000) / 1000, pValue: Math.round(pValue * 10000) / 10000, significant: pValue < 0.05, alpha: 0.05, df }
   }
 
-  function setScenario(s: MCScenario) { currentScenario.value = s; result.value = null }
-  function setCategory(c: string) { selectedCategory.value = c }
-  function toggleGroupBy() { groupByCategory.value = !groupByCategory.value }
+  function persist() {
+    savePersistedState({
+      scenarioId: currentScenario.value.id,
+      iterations: iterations.value,
+      selectedCategory: selectedCategory.value,
+      groupByCategory: groupByCategory.value
+    })
+  }
+
+  function setScenario(s: MCScenario) {
+    currentScenario.value = s
+    result.value = null
+    persist()
+    runSimulation()
+  }
+  function setCategory(c: string) { selectedCategory.value = c; persist() }
+  function toggleGroupBy() { groupByCategory.value = !groupByCategory.value; persist() }
 
   const filteredScenarios = computed(() => {
     if (selectedCategory.value === '全部') return SCENARIOS
@@ -169,6 +211,8 @@ export const useMCStore = defineStore('mc', () => {
     s.forEach(v => { counts[Math.min(bins - 1, Math.floor((v - mn) / bs))]++ })
     return { xAxis: Array.from({ length: bins }, (_, i) => Math.round((mn + i * bs) * 100) / 100), data: counts }
   })
+
+  watch(iterations, () => persist())
 
   return { currentScenario, iterations, result, testResult, isRunning, selectedCategory, groupByCategory, convergenceData, histogramData, filteredScenarios, groupedScenarios, runSimulation, runTest, setScenario, setCategory, toggleGroupBy }
 })
